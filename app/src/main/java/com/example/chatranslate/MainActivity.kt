@@ -18,6 +18,9 @@ import androidx.core.content.ContextCompat
 import java.io.File
 import java.lang.Exception
 import android.content.res.Configuration
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.*
@@ -43,6 +46,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Request Storage Permission
+        requestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE)
+
+
         setContentView(R.layout.activity_main)
 
         // Widgets
@@ -68,7 +77,9 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, MsgLogViewerActivity::class.java)
             intent.putExtra("app", "whatsapp")
             startActivity(intent)
+
         }
+
 
         viewSignalLogBtn.setOnClickListener {
             val intent = Intent(this, MsgLogViewerActivity::class.java)
@@ -114,9 +125,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        // Request Storage Permission
-        requestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE)
+
 
         // Media Observer Service
         val mediaObserverService = Intent(this, MediaObserverService::class.java)
@@ -135,29 +144,36 @@ class MainActivity : AppCompatActivity() {
         }
 
         notificationListenerSwitch.isChecked = isServiceRunning(NotificationListener::class.java)
-        notificationListenerSwitch.isClickable = false
+        notificationListenerSwitch.isClickable = true // Permite clics de forma predeterminada
+
         test.setOnClickListener {
             if (notificationListenerSwitch.isChecked) {
                 AlertDialogHelper.showDialog(
                     this@MainActivity,
                     "Turn off",
-                    "Settings > Apps  & notifications > Special app access > " +
+                    "Settings > Apps & notifications > Special app access > " +
                             "Notification Access > WhatsDeleted > Turn Off",
                     getString(R.string.ok),
                     null
                 ) { dialog, _ -> dialog.cancel() }
-            }
-            else {
-                AlertDialogHelper.showDialog(
-                    this@MainActivity,
-                    "Turn on",
-                    "Settings > Apps & notifications > Special app access > " +
-                            "Notification Access > WhatsDeleted > Allow",
-                    getString(R.string.ok),
-                    null
-                ) { dialog, _ -> dialog.cancel() }
+            } else {
+                val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                startActivity(intent)
             }
         }
+
+// Verifica el estado del servicio periódicamente para ajustar isClickable
+        val handler = Handler(Looper.getMainLooper())
+        val runnable = object : Runnable {
+            override fun run() {
+                val isRunning = isServiceRunning(NotificationListener::class.java)
+                notificationListenerSwitch.isChecked = isRunning
+                notificationListenerSwitch.isClickable = !isRunning // Hacer clic solo si el servicio no está activo
+                handler.postDelayed(this, 1000) // Vuelve a verificar cada segundo
+            }
+        }
+        handler.post(runnable)
+
     }
 
     @Suppress("SameParameterValue")
@@ -235,6 +251,20 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun requestStoragePermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            // Solicitar permiso
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                101 // Código de solicitud
+            )
+        }
+    }
+
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
