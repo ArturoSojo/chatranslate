@@ -1,2 +1,0 @@
-# chatranslate
-Translate Whatsapp Message 
