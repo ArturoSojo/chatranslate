@@ -61,8 +61,7 @@ dependencies {
 
     // Material Design libraries
     implementation(libs.androidx.material3) // Material Design 3 (modern)
-    implementation("com.google.android.material:material:1.3.0") // Older Material Design (optional, if needed)
-
+    implementation("com.google.android.material:material:1.11.0") // Older Material Design (optional, if needed)
 
     // Compose (if applicable)
     implementation(platform(libs.androidx.compose.bom)) // Compose BOM

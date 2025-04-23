@@ -7,21 +7,50 @@ import java.io.File
 
 private const val TAG = "MediaObserver"
 
-class MediaObserver : FileObserver(File(Environment.getExternalStorageDirectory(),
-    "WhatsApp${File.separator}Media${File.separator}WhatsApp Images").toString(), ALL_EVENTS) {
+class MediaObserver : FileObserver(getWatchedPath(), MOVED_TO or CREATE) {
+
+    companion object {
+        fun getWatchedPath(): String {
+            return File(
+                Environment.getExternalStorageDirectory(),
+                "WhatsApp${File.separator}Media${File.separator}WhatsApp Images"
+            ).absolutePath
+        }
+
+        private fun getDestinationDir(): File {
+            return File(
+                Environment.getExternalStorageDirectory(),
+                "WhatsDeleted${File.separator}WhatsDeleted Images"
+            )
+        }
+    }
 
     override fun onEvent(event: Int, path: String?) {
+        if (event != MOVED_TO && event != CREATE) return
+        if (path == null) return
 
-        if (event == MOVED_TO) {
-            try {
-                val srcFile = File(Environment.getExternalStorageDirectory(),
-                    "WhatsApp${File.separator}Media${File.separator}WhatsApp Images${File.separator}$path")
-                val destFile = File(Environment.getExternalStorageDirectory(),
-                    "WhatsDeleted${File.separator}WhatsDeleted Images${File.separator}$path")
-                srcFile.copyTo(target = destFile, overwrite = false, bufferSize = DEFAULT_BUFFER_SIZE)
-            } catch (e: Exception) {
-                Log.e(TAG, e.toString())
+        try {
+            val sourceFile = File(getWatchedPath(), path)
+            val destFile = File(getDestinationDir(), path)
+
+            if (!sourceFile.exists()) {
+                Log.w(TAG, "Archivo fuente no existe: ${sourceFile.absolutePath}")
+                return
             }
+
+            if (!getDestinationDir().exists()) {
+                getDestinationDir().mkdirs()
+            }
+
+            if (!destFile.exists()) {
+                sourceFile.copyTo(destFile, overwrite = false)
+                Log.i(TAG, "Imagen copiada: ${sourceFile.name}")
+            } else {
+                Log.i(TAG, "Archivo ya existe: ${destFile.name}")
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al copiar archivo: ${e.message}", e)
         }
     }
 }

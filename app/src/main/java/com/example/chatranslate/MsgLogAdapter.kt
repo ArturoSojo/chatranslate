@@ -5,9 +5,12 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.chatranslate.databinding.MsgLogItemBinding
 
-class MsgLogAdapter(private val msgList: List<String>) : RecyclerView.Adapter<MsgLogAdapter.MsgLogViewHolder>() {
+class MsgLogAdapter(private var msgList: List<String>) :
+    RecyclerView.Adapter<MsgLogAdapter.MsgLogViewHolder>() {
 
-    class MsgLogViewHolder(private val binding: MsgLogItemBinding) : RecyclerView.ViewHolder(binding.root) {
+    inner class MsgLogViewHolder(private val binding: MsgLogItemBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
         fun bind(msg: String) {
             binding.msgTextView.text = msg
         }
@@ -19,9 +22,13 @@ class MsgLogAdapter(private val msgList: List<String>) : RecyclerView.Adapter<Ms
     }
 
     override fun onBindViewHolder(holder: MsgLogViewHolder, position: Int) {
-        val msg = msgList[position]
-        holder.bind(msg)
+        holder.bind(msgList[position])
     }
 
     override fun getItemCount(): Int = msgList.size
+
+    fun updateData(newList: List<String>) {
+        msgList = newList
+        notifyDataSetChanged()
+    }
 }
